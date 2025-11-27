@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Alpha Pixel — Admin Console</title>
+  
+  <link rel="manifest" href="../manifest.json">
+  <link rel="icon" href="../img/favicon.ico">
+
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================
+       1. ESTILOS CORE & VARIABLES
+       ========================================= */
+    :root {
+      --bg-dark: #050505;
+      --panel-bg: rgba(20, 20, 25, 0.85);
+      --sidebar-bg: rgba(10, 10, 12, 0.95);
+      --text-main: #ffffff;
+      --text-muted: #a0a0a0;
+      --accent: #ff003c;
+      --accent-glow: rgba(255, 0, 60, 0.3);
+      --border: rgba(255, 255, 255, 0.1);
+      --success: #00ff88;
+      
+      --font-tech: 'Orbitron', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+    
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-dark);
+      background-image: radial-gradient(circle at 50% 10%, rgba(255,0,60,0.05), transparent 40%);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden; /* App-like feel */
+    }
+
+    /* =========================================
+       2. LOGIN SCREEN (CYBERPUNK)
+       ========================================= */
+    #login-screen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #020202; z-index: 9999;
+      display: flex; justify-content: center; align-items: center;
+      flex-direction: column;
+    }
+    
+    .login-box {
+      background: rgba(20,20,20,0.9);
+      padding: 40px; border-radius: 12px;
+      border: 1px solid var(--accent);
+      box-shadow: 0 0 30px var(--accent-glow);
+      width: 320px; text-align: center;
+    }
+    
+    .login-box h2 { 
+      font-family: var(--font-tech); margin-bottom: 20px; 
+      color: white; letter-spacing: 2px; 
+    }
+    
+    .login-input {
+      width: 100%; padding: 12px; margin: 8px 0;
+      background: #0a0a0a; border: 1px solid #333;
+      color: white; border-radius: 6px; text-align: center;
+    }
+    .login-input:focus { border-color: var(--accent); }
+    
+    .btn-login {
+      width: 100%; padding: 12px; margin-top: 15px;
+      background: var(--accent); border: none; color: white;
+      font-family: var(--font-tech); cursor: pointer;
+      transition: 0.3s;
+    }
+    .btn-login:hover { box-shadow: 0 0 15px var(--accent); }
+
+    /* =========================================
+       3. LAYOUT PRINCIPAL
+       ========================================= */
+    #admin-panel {
+      display: flex; height: 100vh; width: 100%;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px; background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 20px; transition: transform 0.3s ease;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 40px; padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo-box {
+      width: 40px; height: 40px; background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; border-radius: 8px; font-family: var(--font-tech);
+    }
+
+    .nav-btn {
+      background: transparent; border: none; color: var(--text-muted);
+      text-align: left; padding: 12px 15px; margin-bottom: 5px;
+      cursor: pointer; border-radius: 6px; font-size: 0.95rem;
+      transition: 0.2s; display: flex; align-items: center; gap: 10px;
+    }
+    .nav-btn:hover { color: white; background: rgba(255,255,255,0.05); }
+    .nav-btn.active {
+      background: rgba(255, 0, 60, 0.1);
+      color: var(--accent); border-left: 3px solid var(--accent);
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1; display: flex; flex-direction: column;
+      overflow: hidden; position: relative;
+    }
+
+    .top-bar {
+      height: 60px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 20px; background: rgba(5,5,5,0.8);
+    }
+
+    .menu-toggle { display: none; font-size: 1.5rem; cursor: pointer; margin-right: 15px; }
+
+    .header-actions button {
+      background: #111; border: 1px solid #333; color: white;
+      padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;
+    }
+    .header-actions button:hover { border-color: var(--text-muted); }
+
+    /* Scrollable Area */
+    .scroll-area {
+      flex: 1; overflow-y: auto; padding: 20px;
+    }
+
+    /* =========================================
+       4. COMPONENTES (Dashboard, Tables, Forms)
+       ========================================= */
+    .section { display: none; animation: fadeIn 0.3s ease; }
+    .section.active { display: block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    /* Stats Cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .stat-card {
+      background: var(--panel-bg); border: 1px solid var(--border);
+      padding: 20px; border-radius: 12px;
+    }
+    .stat-card h3 { font-size: 2.5rem; margin: 0; color: white; font-family: var(--font-tech); }
+    .stat-card p { color: var(--text-muted); margin: 5px 0 0; font-size: 0.9rem; }
+
+    /* Tables */
+    .panel-box {
+      background: var(--panel-bg); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; margin-bottom: 20px;
+    }
+    .panel-header {
+      padding: 15px 20px; background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .panel-body { padding: 20px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    th { color: var(--text-muted); font-weight: 500; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* Forms */
+    input, select, textarea {
+      width: 100%; background: #0a0a0a; border: 1px solid #333;
+      padding: 10px; color: white; border-radius: 6px; margin-bottom: 10px;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+    button.primary {
+      background: var(--accent); border: none; color: white;
+      padding: 8px 16px; border-radius: 4px; cursor: pointer;
+    }
+
+    /* Kanban */
+    .kanban-board { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
+    .kanban-col {
+      flex: 1; min-width: 250px; background: rgba(255,255,255,0.03);
+      border-radius: 8px; padding: 10px; border: 1px solid var(--border);
+    }
+    .kanban-col h4 { margin-bottom: 10px; text-align: center; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; }
+    
+    .task-card {
+      background: #1a1a1a; padding: 12px; border-radius: 6px;
+      margin-bottom: 10px; border-left: 3px solid var(--accent);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .task-card strong { display: block; margin-bottom: 5px; color: white; }
+    .task-card small { color: #888; font-size: 0.8rem; }
+    .task-actions { margin-top: 8px; display: flex; gap: 5px; }
+    .task-actions button {
+      padding: 4px 8px; font-size: 0.75rem; cursor: pointer;
+      background: #333; border: none; color: white; border-radius: 3px;
+    }
+
+    /* Status Dot */
+    .status-badge {
+      padding: 4px 8px; border-radius: 12px; font-size: 0.75rem;
+      background: rgba(0,255,136,0.1); color: var(--success); border: 1px solid rgba(0,255,136,0.2);
+    }
+
+    /* =========================================
+       5. RESPONSIVE
+       ========================================= */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: absolute; left: -260px; height: 100%;
+        background: #000; box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+      }
+      .sidebar.open { transform: translateX(260px); }
+      .menu-toggle { display: block; color: white; }
+      .kanban-board { flex-direction: column; }
+    }
+    /* Barra de Alerta Admin */
+#admin-offline-alert {
+  background: rgba(255, 0, 60, 0.9); /* Rojo Alpha Pixel */
+  color: white;
+  text-align: center;
+  padding: 8px;
+  font-family: var(--font-tech);
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  position: fixed;
+  top: 0; left: 0; width: 100%;
+  z-index: 9999;
+  border-bottom: 2px solid #fff;
+  box-shadow: 0 5px 20px rgba(255,0,60,0.4);
+  animation: slideDown 0.4s ease-out;
+}
+
+/* Ajuste para que no tape el header */
+body.offline-mode .main-content {
+  padding-top: 40px; /* Empuja el contenido hacia abajo */
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+.blink { animation: blinker 1s linear infinite; }
+@keyframes blinker { 50% { opacity: 0; } }
+
+
+/* Estilos de Botones Rápidos */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.btn-preset {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-family: var(--font-tech);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.btn-preset:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    box-shadow: 0 0 15px var(--accent-glow);
+    transform: translateY(-2px);
+}
+
+  </style>
+</head>
+<body>
+
+  <div id="admin-offline-alert" style="display:none;">
+  <span class="blink">⚠️</span> <strong>SISTEMA DESCONECTADO:</strong> Operando en modo local (PouchDB). Los cambios se sincronizarán al reconectar.
+</div>
+
+  <div id="login-screen">
+    <div class="login-box">
+      <div style="font-size:3rem; margin-bottom:10px;">🔒</div>
+      <h2>ALPHA ADMIN</h2>
+      <input type="text" id="login-user" class="login-input" placeholder="ID DE USUARIO">
+      <input type="password" id="login-pass" class="login-input" placeholder="CLAVE DE ACCESO">
+      <button class="btn-login" onclick="validarLogin()">ACCEDER AL SISTEMA</button>
+      <p id="login-error" style="color:red; display:none; margin-top:10px; font-size:0.8rem;">ACCESO DENEGADO</p>
+    </div>
+  </div>
+
+  <div id="admin-panel" style="display:none">
+    
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="logo-box">AP</div>
+        <div style="margin-left:10px;">
+          <h3 style="font-family:var(--font-tech)">ALPHA PIXEL</h3>
+          <small style="color:var(--text-muted)">v2.0 System</small>
+        </div>
+      </div>
+      
+      <nav>
+        <button class="nav-btn active" data-section="dashboard">📊 Dashboard</button>
+        <button class="nav-btn" data-section="clients">👥 Clientes</button>
+        <button class="nav-btn" data-section="tasks">⚡ Tareas</button>
+        <button class="nav-btn" data-section="push-panel">📢 Notificaciones</button>
+        <button class="nav-btn" data-section="settings">⚙️ Ajustes</button>
+      </nav>
+
+      <div style="margin-top:auto; padding-top:20px; border-top:1px solid var(--border);">
+        <a href="../index.html" class="nav-btn" style="color:var(--accent)">⬅ Volver a Web</a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <div style="display:flex; align-items:center;">
+          <div class="menu-toggle" onclick="toggleSidebar()">☰</div>
+          <h3 id="section-title" style="font-family:var(--font-tech)">DASHBOARD</h3>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:15px;">
+           <span class="status-badge" id="netStatus">ONLINE</span>
+
+           <div class="header-actions">
+            <button id="export-btn">💾 Exportar</button>
+            <button id="import-btn">📂 Importar</button>
+            <input id="import-file" type="file" style="display:none" accept=".json" />
+           </div>
+        </div>
+      </header>
+
+      <div class="scroll-area">
+        
+        <section id="dashboard" class="section active">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <h3 id="clients-count">0</h3>
+              <p>CLIENTES REGISTRADOS</p>
+            </div>
+            <div class="stat-card">
+              <h3 id="tasks-count">0</h3>
+              <p>TAREAS TOTALES</p>
+            </div>
+            <div class="stat-card" style="border-color:var(--success)">
+              <h3 id="tasks-done" style="color:var(--success)">0</h3>
+              <p>PROYECTOS COMPLETADOS</p>
+            </div>
+          </div>
+
+          <div class="panel-box">
+            <div class="panel-header"><h3>Bienvenido, Administrador</h3></div>
+            <div class="panel-body">
+              <p style="color:#aaa">Sistema operativo. Selecciona una opción del menú lateral para comenzar a gestionar los recursos de la agencia.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="clients" class="section">
+          <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px;">
+            <div class="panel-box">
+              <div class="panel-header"><h4>Nuevo Cliente</h4></div>
+              <div class="panel-body">
+                <form id="client-form">
+                  <input type="text" id="client-name" placeholder="Nombre completo" required />
+                  <input type="email" id="client-email" placeholder="Correo electrónico" />
+                  <input type="tel" id="client-phone" placeholder="Teléfono" />
+                  <textarea id="client-notes" placeholder="Notas del proyecto..."></textarea>
+                  <div style="display:flex; gap:10px;">
+                    <button type="submit" class="primary" style="flex:1">Guardar</button>
+                    <button type="button" id="client-reset" style="background:#333; color:white; border:none; padding:8px; border-radius:4px;">Limpiar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel-box">
+              <div class="panel-header">
+                <h4>Base de Datos</h4>
+                <input id="client-search" placeholder="🔍 Buscar..." style="width:150px; margin:0; padding:6px;">
+              </div>
+              <div class="panel-body" style="overflow-x:auto;">
+                <table id="clients-table">
+                  <thead>
+  <tr>
+    <th>Nombre</th>
+    <th>Correo</th>
+    <th>Teléfono</th> <th>Notas</th>
+    <th>Acciones</th>
+  </tr>
+</thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tasks" class="section">
+          <div class="panel-box">
+            <div class="panel-header"><h4>Control de Misiones</h4></div>
+            <div class="panel-body">
+              
+              <form id="task-form" style="display:flex; gap:10px; flex-wrap:wrap; background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; margin-bottom:20px;">
+                <input id="task-title" placeholder="Descripción de la tarea" required style="flex:2; margin:0;">
+                <select id="task-owner" style="flex:1; margin:0;">
+                  <option value="">Asignar Agente...</option>
+                  </select>
+                <select id="task-status" style="flex:1; margin:0;">
+                  <option value="todo">Por hacer</option>
+                  <option value="inprogress">En curso</option>
+                  <option value="done">Finalizado</option>
+                </select>
+                <button type="submit" class="primary">Agregar Tarea</button>
+              </form>
+
+              <div class="kanban-board">
+                <div class="kanban-col" data-col="todo">
+                  <h4 style="border-bottom:2px solid #555; padding-bottom:5px;">📋 Por Hacer</h4>
+                  <div id="col-todo" style="min-height:100px;"></div>
+                </div>
+                <div class="kanban-col" data-col="inprogress">
+                  <h4 style="border-bottom:2px solid orange; padding-bottom:5px;">🚧 En Progreso</h4>
+                  <div id="col-inprogress" style="min-height:100px;"></div>
+                </div>
+                <div class="kanban-col" data-col="done">
+                  <h4 style="border-bottom:2px solid var(--success); padding-bottom:5px;">✅ Completado</h4>
+                  <div id="col-done" style="min-height:100px;"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <section id="settings" class="section">
+           <div class="panel-box">
+             <div class="panel-header"><h4>Configuración del Sistema</h4></div>
+             <div class="panel-body">
+               <p>Tema actual: <strong>Cyberpunk Dark (Default)</strong></p>
+               <br>
+               <p style="color:#666">Versión del sistema: 2.0.4 Alpha</p>
+             </div>
+           </div>
+        </section>
+
+        <section id="push-panel" class="section">
+  <div class="panel-box">
+    <div class="panel-header"><h4>Enviar Notificación Masiva</h4></div>
+    <div class="panel-body">
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border);">
+    <h4 style="margin-bottom: 15px; color: var(--text-muted);">⚡ ENVÍO RÁPIDO (PRESETS)</h4>
+    
+    <div class="quick-actions">
+        <button type="button" onclick="enviarPreset('oferta')" class="btn-preset">
+            🔥 Lanzar Oferta Flash
+        </button>
+
+        <button type="button" onclick="enviarPreset('recordatorio')" class="btn-preset">
+            ⏰ Recordatorio Carrito
+        </button>
+
+        <button type="button" onclick="enviarPreset('test')" class="btn-preset">
+            🧪 Test de Sistema
+        </button>
+    </div>
+</div>
+      <form onsubmit="enviarNotificacionAdmin(event)">
+        <label>Título</label>
+        <input type="text" id="push-title" placeholder="Ej: ¡Nueva Oferta!" required>
+
+        <label>Mensaje</label>
+        <textarea id="push-msg" rows="3" placeholder="Escribe el cuerpo del mensaje..." required></textarea>
+
+        <label>Enlace (Opcional)</label>
+        <input type="text" id="push-url" placeholder="https://...">
+
+        <button type="submit" class="primary" style="width:100%; margin-top:10px;">🚀 ENVIAR A TODOS</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script> <script>
+    // 1. LOGICA DE INTERFAZ (UI)
+    // Login Simple
+    // ==========================================
+    // 1. DETECTOR DE SERVIDOR (PING)
+    // ==========================================
+    async function verificarServidor() {
+        try {
+            // Intentamos buscar un archivo pequeño en el servidor
+            // Agregamos '?t=' + tiempo para evitar que lea de la caché
+            const respuesta = await fetch('../manifest.json?t=' + new Date().getTime(), {
+                method: 'HEAD' // Solo pedimos la cabecera, es muy rápido
+            });
+
+            // Si llegamos aquí, XAMPP está vivo. No hacemos nada.
+            console.log("Conexión con servidor exitosa.");
+
+        } catch (error) {
+            // Si cae en el catch, es que XAMPP está apagado o no hay red real.
+            console.warn("Servidor inalcanzable. Redirigiendo a Offline...");
+            
+            // Forzamos la ida a la página offline
+            window.location.href = "../offline.html";
+        }
+    }
+
+    // Ejecutar inmediatamente al abrir el login
+    verificarServidor();
+    function validarLogin() {
+      const u = document.getElementById("login-user").value;
+      const p = document.getElementById("login-pass").value;
+      // Mismo user/pass que tenías
+      if (u === "admin" && p === "1234") {
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("admin-panel").style.display = "flex";
+      } else {
+        document.getElementById("login-error").style.display = "block";
+      }
+    }
+
+    // Toggle Sidebar Movil
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // Monitor de Red (Online/Offline)
+    function updateNetStatus() {
+      const el = document.getElementById('netStatus');
+      if(navigator.onLine) {
+        el.textContent = "ONLINE";
+        el.style.color = "var(--success)";
+        el.style.borderColor = "rgba(0,255,136,0.2)";
+      } else {
+        el.textContent = "OFFLINE";
+        el.style.color = "red";
+        el.style.borderColor = "red";
+      }
+    }
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+    updateNetStatus();
+
+    // 2. CORRECCIÓN SERVICE WORKER
+    // (Tu app.js intenta registrar js/sw.js que no existe, lo sobrescribimos aquí con la ruta correcta)
+    if ('serviceWorker' in navigator) {
+      // Subimos un nivel (..) para encontrar el sw.js en la raíz
+      navigator.serviceWorker.register('../sw.js')
+        .then(() => console.log('SW Admin registrado correctamente'))
+        .catch(err => console.warn('SW Error', err));
+    }
+
+    // ==========================================
+  // MONITOR DE SIGNOS VITALES (Admin)
+  // ==========================================
+  async function checkAdminConnection() {
+      const alertBanner = document.getElementById('admin-offline-alert');
+      const statusBadge = document.getElementById('netStatus');
+      const body = document.body;
+
+      try {
+          // Ping al servidor (subimos un nivel con ../)
+          await fetch('../manifest.json?t=' + new Date().getTime(), {
+              method: 'HEAD',
+              cache: 'no-store'
+          });
+
+          // === ONLINE (XAMPP VIVO) ===
+          if (alertBanner) alertBanner.style.display = 'none';
+          body.classList.remove('offline-mode');
+
+          if (statusBadge) {
+              statusBadge.textContent = "SYSTEM ONLINE";
+              statusBadge.style.color = "#00ff88";
+              statusBadge.style.borderColor = "rgba(0,255,136,0.3)";
+              statusBadge.style.background = "rgba(0,255,136,0.1)";
+          }
+
+      } catch (error) {
+          // === OFFLINE (XAMPP MUERTO) ===
+          if (alertBanner) alertBanner.style.display = 'block';
+          body.classList.add('offline-mode');
+
+          if (statusBadge) {
+              statusBadge.textContent = "LOCAL MODE"; // Texto más técnico
+              statusBadge.style.color = "#ff003c";
+              statusBadge.style.borderColor = "#ff003c";
+              statusBadge.style.background = "rgba(255,0,60,0.1)";
+          }
+      }
+  }
+
+  // Iniciar vigilancia
+  window.addEventListener('load', checkAdminConnection);
+  setInterval(checkAdminConnection, 3000); // Escanear cada 3 segundos
+</script>
+
+
+  </script>
+</body>
+</html>

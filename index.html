@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Alpha Pixel — Agencia Digital</title>
+  <meta name="description" content="Estrategia, Branding, PWA y Marketing Digital.">
+  <link rel="icon" href="img/favicon.ico">
+  <link rel="manifest" href="manifest.json">
+
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================
+       1. VARIABLES Y DISEÑO BASE
+       ========================================= */
+    :root {
+      --bg-dark: #050505;
+      --card-bg: rgba(20, 20, 25, 0.6);
+      --text-main: #ffffff;
+      --text-muted: #b0b0b0;
+      --accent: #ff003c;       
+      --accent-glow: rgba(255, 0, 60, 0.6);
+      --border: rgba(255, 255, 255, 0.1);
+      --font-tech: 'Orbitron', sans-serif;
+      --font-body: 'Inter', system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html { scroll-behavior: smooth; }
+    
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* CANVAS DE FONDO (MAGIA) */
+    #hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: 0; /* Detrás del contenido */
+      opacity: 0.6;
+    }
+
+    h1, h2, h3 { font-family: var(--font-tech); text-transform: uppercase; letter-spacing: 1px; }
+    
+    p { line-height: 1.6; color: var(--text-muted); font-size: 0.95rem; }
+    a { text-decoration: none; color: inherit; transition: 0.3s; }
+    ul { list-style: none; }
+    img { display: block; max-width: 100%; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 2; }
+
+    /* LEYENDA SERVIDOR */
+    #server-warning {
+        background: #ffaa00; 
+        color: #000;
+        text-align: center;
+        padding: 10px;
+        font-weight: bold;
+        font-family: var(--font-tech);
+        position: fixed; top: 70px; left: 0; width: 100%; z-index: 999;
+        border-bottom: 2px solid #000;
+        animation: slideDown 0.5s ease;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+    @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    /* =========================================
+       2. NAVBAR (Glass Effect)
+       ========================================= */
+    header {
+      position: fixed; top: 0; width: 100%; z-index: 1000;
+      background: rgba(5, 5, 5, 0.8);
+      backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--border);
+      height: 70px;
+      display: flex; align-items: center;
+    }
+
+    .nav-container { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-family: var(--font-tech); font-size: 1.1rem; }
+    .brand img { width: 38px; height: 38px; border-radius: 6px; box-shadow: 0 0 15px var(--accent-glow); }
+
+    /* STATUS DE CONEXIÓN */
+    .connection-status {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 12px; border-radius: 20px;
+      background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+      font-size: 0.7rem; font-family: var(--font-tech);
+      margin-right: 20px; transition: 0.3s;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #555; box-shadow: 0 0 8px currentColor; }
+    
+    .connection-status.online .status-dot { background: #00ff88; }
+    .connection-status.online { border-color: rgba(0,255,136,0.3); color: #00ff88; }
+    
+    .connection-status.offline .status-dot { background: #ff3333; }
+    .connection-status.offline { border-color: rgba(255,51,51,0.3); color: #ff3333; }
+
+    .nav-links { display: flex; gap: 24px; align-items: center; }
+    .nav-links a { font-size: 0.9rem; font-weight: 500; color: #ccc; position: relative; }
+    .nav-links a:hover { color: white; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+
+    .btn-action {
+      background: transparent; border: 1px solid var(--accent);
+      color: var(--accent) !important; padding: 8px 20px;
+      border-radius: 4px; font-family: var(--font-tech); font-size: 0.8rem;
+      transition: 0.3s;
+      position: relative; overflow: hidden;
+    }
+    .btn-action:hover {
+      background: var(--accent); color: white !important;
+      box-shadow: 0 0 25px var(--accent-glow);
+    }
+
+    .menu-toggle { display: none; font-size: 1.5rem; cursor: pointer; color: white; }
+
+    /* =========================================
+       3. HERO SECTION (RENOVADO)
+       ========================================= */
+    .hero {
+      min-height: 100vh; /* Pantalla completa */
+      display: flex; align-items: center; justify-content: center;
+      text-align: center; position: relative;
+      background: radial-gradient(circle at center, rgba(20,20,30,0.2), #050505 80%);
+      overflow: hidden;
+    }
+    
+    /* Título con gradiente animado */
+    .hero h1 {
+      font-size: 4rem; font-weight: 900; margin-bottom: 20px;
+      background: linear-gradient(90deg, #fff, #888, #fff);
+      background-size: 200%;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      animation: shine 5s linear infinite;
+      text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    @keyframes shine { 0% { background-position: 0%; } 100% { background-position: 200%; } }
+
+    /* Efecto de escritura */
+    .typing-container {
+      display: inline-block;
+      border-right: 3px solid var(--accent);
+      white-space: nowrap;
+      overflow: hidden;
+      animation: blink 0.75s step-end infinite;
+      font-size: 1.2rem; color: var(--text-muted);
+      margin-bottom: 40px;
+      max-width: 100%;
+    }
+    @keyframes blink { 50% { border-color: transparent; } }
+
+    /* Botón principal grande */
+    .btn-hero {
+        padding: 15px 40px; font-size: 1rem; font-weight: bold; letter-spacing: 2px;
+        border: 1px solid var(--accent); background: rgba(255, 0, 60, 0.1);
+        color: white; text-transform: uppercase; font-family: var(--font-tech);
+        transition: 0.4s; clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+    }
+    .btn-hero:hover {
+        background: var(--accent);
+        box-shadow: 0 0 40px var(--accent-glow);
+        transform: scale(1.05);
+    }
+
+    /* =========================================
+       SECCIONES INTERNAS
+       ========================================= */
+    section { padding: 80px 0; position: relative; z-index: 2; }
+    h2 { font-size: 2.2rem; text-align: center; margin-bottom: 3rem; color: white; }
+
+    /* Tarjetas Glass mejoradas */
+    .glass-card {
+      background: rgba(30, 30, 35, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 30px; border-radius: 16px;
+      transition: 0.4s;
+    }
+    .glass-card:hover {
+      transform: translateY(-10px);
+      border-color: var(--accent);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    }
+    .glass-card img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; opacity: 0.8; transition: 0.3s; }
+    .glass-card:hover img { opacity: 1; }
+
+    /* Grid System */
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+    .grid-values { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+
+    .value-card {
+        background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+        padding: 30px; border-radius: 12px; text-align: center; transition: 0.3s;
+    }
+    .value-card:hover { border-color: var(--accent); transform: scale(1.03); }
+    .value-icon { font-size: 2.5rem; margin-bottom: 15px; display: block; }
+
+    /* Portafolio */
+    .portfolio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+    .project-card {
+      position: relative; border-radius: 12px; overflow: hidden; aspect-ratio: 16/10;
+      border: 1px solid var(--border); cursor: pointer;
+    }
+    .project-card img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+    .project-card:hover img { transform: scale(1.1); }
+    .project-info {
+      position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px;
+      background: linear-gradient(to top, #000, transparent);
+      transform: translateY(10px); opacity: 0; transition: 0.3s;
+    }
+    .project-card:hover .project-info { transform: translateY(0); opacity: 1; }
+
+    /* Formulario y Footer */
+    .tech-form {
+      background: rgba(15,15,15,0.8); border: 1px solid var(--border);
+      padding: 40px; border-radius: 16px; max-width: 700px; margin: 0 auto;
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    }
+    input, select, textarea {
+      width: 100%; background: #0a0a0a; border: 1px solid #333;
+      padding: 14px; color: white; border-radius: 8px; margin-bottom: 16px; font-family: inherit;
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+
+    /* Redes */
+    .social-hub { margin-top: 30px; text-align: center; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .social-icons { display: flex; gap: 20px; justify-content: center; align-items: center; margin-top: 15px; }
+    .social-icons img { width: 48px; height: 48px; border-radius: 50%; border: 2px solid transparent; transition: 0.3s; }
+    .social-icons a:hover img { transform: scale(1.2); border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+
+    footer { border-top: 1px solid #222; padding: 40px 0; text-align: center; margin-top: 40px; font-size: 0.9rem; color: #666; background: #020202; position: relative; z-index: 2; }
+
+    /* Animación Scroll */
+    .fade-on-scroll { opacity: 0; transform: translateY(30px); transition: 0.8s ease-out; }
+    .fade-on-scroll.visible { opacity: 1; transform: translateY(0); }
+
+    /* Splash / Modal */
+    #splash {
+      position: fixed; inset: 0; background: #050505; z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      transition: opacity 0.5s;
+    }
+    .loader {
+      width: 50px; height: 50px; border: 3px solid var(--accent);
+      border-top-color: transparent; border-radius: 50%;
+      animation: spin 1s linear infinite; margin-top: 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+      backdrop-filter: blur(8px); z-index: 2000;
+      display: none; align-items: center; justify-content: center;
+    }
+    .modal .panel {
+      background: #111; padding: 24px; border-radius: 16px;
+      width: 90%; max-width: 500px; border: 1px solid var(--accent);
+      box-shadow: 0 0 50px rgba(255,0,60,0.2);
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.5rem; }
+      .nav-links {
+        position: fixed; top: 70px; right: 0; width: 100%; height: 0;
+        background: #0a0a0a; flex-direction: column; overflow: hidden;
+        transition: 0.3s; border-bottom: 1px solid var(--border); padding: 0;
+      }
+      .nav-links.active { height: auto; padding: 20px 0; }
+      .menu-toggle { display: block; }
+      .connection-status { margin-left: 20px; margin-right: auto; }
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="hero-canvas"></canvas>
+
+  <div id="server-warning" style="display:none;">
+    ⚠️ <strong>SERVIDOR DESCONECTADO:</strong> Modo Offline Activo.
+  </div>
+
+  <div id="splash">
+    <img src="img/logo.jpeg" style="width: 90px; border-radius: 15px; box-shadow: 0 0 30px var(--accent-glow);">
+    <div class="loader"></div>
+    <p style="margin-top:15px; font-family: var(--font-tech); font-size: 0.8rem; letter-spacing: 2px;">INITIALIZING SYSTEM...</p>
+  </div>
+
+  <header>
+    <div class="container nav-container">
+      <a href="#inicio" class="brand">
+        <img id="brandLogo" src="img/logo.jpeg" alt="logo">
+        <span>ALPHA PIXEL</span>
+      </a>
+      <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+      <nav>
+        <ul class="nav-links" id="navLinks">
+          <li>
+            <div id="connStatus" class="connection-status">
+              <span class="status-dot"></span>
+              <span class="status-text" id="statusText">CHECKING</span>
+            </div>
+          </li>
+          <li id="adminLoginBtn"><a href="admin/index2.html" style="color:var(--accent)">:: ADMIN LOGIN</a></li>
+          <li><a href="#nosotros">Nosotros</a></li>
+          <li><a href="#servicios">Servicios</a></li>
+          <li><a href="#portafolio">Proyectos</a></li>
+          <li><a href="#contacto" class="btn-action">INICIAR</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="inicio" class="hero">
+      <div class="container">
+        <h1>CREANDO EL FUTURO</h1>
+        <div class="typing-container" id="typing-text"></div>
+        <br>
+        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap:wrap;">
+          <a href="#contacto" class="btn-hero">SOLICITAR ASESORÍA</a>
+          <a href="#servicios" style="padding: 15px 30px; border: 1px solid #555; border-radius: 4px; color: #ddd; transition: 0.3s;">EXPLORAR</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="nosotros" class="section-values">
+      <div class="container">
+        <div class="grid-values">
+          <div class="value-card fade-on-scroll">
+            <span class="value-icon">🚀</span>
+            <h3>Innovación</h3>
+            <p>Tecnología de punta para marcas que no se conforman con lo tradicional.</p>
+          </div>
+          <div class="value-card fade-on-scroll">
+            <span class="value-icon">🎯</span>
+            <h3>Estrategia</h3>
+            <p>Datos reales, no suposiciones. Convertimos tráfico en clientes leales.</p>
+          </div>
+          <div class="value-card fade-on-scroll">
+            <span class="value-icon">👁️</span>
+            <h3>Visión</h3>
+            <p>Diseño que impacta y funcionalidad que enamora. El equilibrio perfecto.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="servicios">
+      <div class="container">
+        <h2 class="fade-on-scroll">NUESTROS SERVICIOS</h2>
+        <div class="grid-3">
+          <div class="glass-card fade-on-scroll">
+            <img src="img/seo.png" alt="Marketing">
+            <h3>Marketing Digital</h3>
+            <p>Campañas agresivas de ROI positivo.</p>
+          </div>
+          <div class="glass-card fade-on-scroll">
+            <img src="img/desarrollo.jpg" alt="Web">
+            <h3>Desarrollo PWA</h3>
+            <p>Webs ultrarrápidas que funcionan sin internet.</p>
+          </div>
+          <div class="glass-card fade-on-scroll">
+            <img src="img/ban.png" alt="Branding">
+            <h3>Branding</h3>
+            <p>Identidad visual que deja huella.</p>
+          </div>
+          <div class="glass-card fade-on-scroll">
+            <img src="img/33d.jpg" alt="3D">
+            <h3>Mundos 3D</h3>
+            <p>Experiencias inmersivas en el navegador.</p>
+          </div>
+          <div class="glass-card fade-on-scroll">
+            <img src="img/iiaa.png" alt="IA">
+            <h3>Consultoría IA</h3>
+            <p>Automatiza tu negocio con inteligencia.</p>
+          </div>
+          <div class="glass-card fade-on-scroll">
+            <img src="img/tabla.jpg" alt="Data">
+            <h3>Big Data</h3>
+            <p>Dashboards interactivos para decisiones clave.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="portafolio">
+      <div class="container">
+        <h2 class="fade-on-scroll">PORTAFOLIO</h2>
+        <div class="portfolio-grid">
+          <div class="project-card fade-on-scroll" onclick="openModal(1)">
+            <img src="img/red social.png">
+            <div class="project-info"><h3>Social Growth</h3><p style="color:var(--success)">+200% Leads</p></div>
+          </div>
+          <div class="project-card fade-on-scroll" onclick="openModal(2)">
+            <img src="img/web.jpg">
+            <div class="project-info"><h3>E-Commerce PWA</h3><p style="color:var(--success)">App Nativa</p></div>
+          </div>
+          <div class="project-card fade-on-scroll" onclick="openModal(3)">
+            <img src="img/bran.png">
+            <div class="project-info"><h3>Corporate Identity</h3><p style="color:var(--success)">Rebranding</p></div>
+          </div>
+          <div class="project-card fade-on-scroll" onclick="openModal(4)">
+            <img src="img/3d.jpg">
+            <div class="project-info"><h3>3D Product</h3><p style="color:var(--success)">WebGL</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contacto">
+      <div class="container">
+        <div class="tech-form fade-on-scroll">
+          <h2 style="text-align:center; margin-bottom:20px;">INICIAR MISIÓN</h2>
+          <form onsubmit="sendForm(event)">
+            <input type="text" name="name" placeholder="Nombre de Agente" required>
+            <input type="email" name="email" placeholder="Correo de Contacto" required>
+            <select name="servicio">
+              <option value="">Seleccionar Objetivo...</option>
+              <option>Desarrollo Web / PWA</option>
+              <option>Marketing Digital</option>
+              <option>Branding</option>
+              <option>Consultoría IA</option>
+            </select>
+            <textarea name="message" rows="4" placeholder="Detalles de la misión..." required></textarea>
+            <button class="btn-action" style="width:100%; cursor:pointer; background:var(--accent); color:white!important; font-weight:bold;">ENVIAR DATOS</button>
+          </form>
+
+          <div class="social-hub">
+            <h3 style="font-size:0.8rem;">REDES DE COMUNICACIÓN</h3>
+            <div class="social-icons">
+              <a href="https://www.facebook.com/share/1Bk8RpWXP2/" target="_blank"><img src="img/face.gif"></a>
+              <a href="https://www.tiktok.com/@alpha.pixel5" target="_blank"><img src="img/tik.gif"></a>
+              <a href="https://www.instagram.com/alp.hapixel" target="_blank"><img src="img/ig.gif"></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <img src="img/logo.jpeg" style="width:50px; border-radius:8px; margin-bottom:10px; opacity:0.8">
+      <p>© 2025 Alpha Pixel Systems. Todos los derechos reservados.</p>
+      <br>
+      <a href="terminos.html" style="color:#555; font-size:0.8rem;">Protocolos Legales</a>
+    </div>
+  </footer>
+
+  <div class="modal" id="modal">
+    <div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0; color:white;" id="modalTitle">Project</h3>
+        <button onclick="closeModal()" style="background:none; border:none; color:var(--accent); font-size:2rem; cursor:pointer;">&times;</button>
+      </div>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <a href="https://wa.me/qr/P7HJXTRLCKMVL1" target="_blank" style="position:fixed; bottom:20px; right:20px; z-index:900;">
+    <img src="img/whats.apng" style="width:60px; filter:drop-shadow(0 0 15px #00ff88);">
+  </a>
+  <button id="btn-notify" onclick="suscribirPush()" style="position:fixed; bottom:90px; right:20px; z-index:900; background:#111; border:1px solid var(--accent); color:white; width:50px; height:50px; border-radius:50%; cursor:pointer; box-shadow:0 0 15px var(--accent-glow);">
+  🔔
+</button>
+
+<script>
+    // --- 1. CONFIGURACIÓN GLOBAL ---
+    // PEGA AQUÍ TU CLAVE PÚBLICA (La del config.php)
+    const PUBLIC_VAPID_KEY = 'BJMGlJP7boc2RO85-depDOwz_7Un8bqcCibjl5vNnsJeKp_joMDngpyWdYeBBRvcTjEamLR-cpJacAmVJSHRvAk'; 
+      
+    // Iniciar Base de Datos PouchDB
+    let db;
+    try {
+        db = new PouchDB('alpha_pixel_db');
+    } catch (e) {
+        console.error("No se pudo iniciar la DB local", e);
+    }
+
+    // --- 2. LÓGICA DE NOTIFICACIONES PUSH ---
+    async function suscribirPush() {
+        const btn = document.getElementById('btn-notify');
+        
+        // Verificación de soporte
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            alert("Tu navegador no soporta notificaciones.");
+            return;
+        }
+
+        // Pedir permiso
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            alert("Permiso denegado. Actívalo en la configuración del navegador.");
+            return;
+        }
+
+        if(btn) btn.innerHTML = "⏳"; // Cargando...
+
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            
+            // Intentamos suscribir (o recuperar suscripción)
+            let subscription = await registration.pushManager.getSubscription();
+
+            if (!subscription) {
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+                });
+            }
+
+            // IMPORTANTE: Siempre enviamos al servidor para asegurar que se guarde en el JSON
+            // (Esto arregla el error de "0 dispositivos")
+            const subscriptionData = JSON.parse(JSON.stringify(subscription));
+
+            await fetch('backend/suscribir.php', {
+                method: 'POST',
+                body: JSON.stringify({ suscripcion: subscriptionData }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            alert("✅ ¡Suscrito correctamente!");
+            if(btn) {
+                btn.innerHTML = "🔕"; // Icono de 'Ya suscrito'
+                btn.onclick = null;   // Desactivar botón para no spammear
+            }
+
+        } catch (error) {
+            console.error("Error suscripción:", error);
+            alert("Error al suscribirse. Verifica que XAMPP esté activo.");
+            if(btn) btn.innerHTML = "🔔";
+        }
+    }
+
+    // Convertidor VAPID (Necesario)
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+        return outputArray;
+    }
+
+    // --- 3. SPLASH SCREEN ---
+    window.addEventListener('load', () => {
+      const s = document.getElementById('splash');
+      if(s) {
+        setTimeout(() => {
+          s.style.opacity = '0';
+          setTimeout(() => { if(s.parentNode) s.parentNode.removeChild(s); }, 300);
+        }, 200); 
+      }
+    });
+
+    // --- 4. DETECTOR DE SERVIDOR (PING XAMPP) ---
+    async function checkServerHealth() {
+        const loginBtn = document.getElementById('adminLoginBtn');
+        const warningBanner = document.getElementById('server-warning');
+        const statusDiv = document.getElementById('connStatus');
+        const statusText = document.getElementById('statusText');
+
+        // Timeout rápido (1.5s)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1500);
+
+        try {
+            // Intentar conectar con el servidor
+            await fetch('manifest.json?t=' + new Date().getTime(), {
+                method: 'HEAD',
+                cache: 'no-store',
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId); 
+
+            // ONLINE
+            if(statusDiv) {
+                statusDiv.classList.remove('offline');
+                statusDiv.classList.add('online');
+                if(statusText) statusText.textContent = "ONLINE";
+            }
+            if(loginBtn) loginBtn.style.display = 'block';
+            if(warningBanner) warningBanner.style.display = 'none';
+
+        } catch (error) {
+            // OFFLINE
+            if(statusDiv) {
+                statusDiv.classList.remove('online');
+                statusDiv.classList.add('offline');
+                if(statusText) statusText.textContent = "OFFLINE";
+            }
+            if(loginBtn) loginBtn.style.display = 'none';
+            if(warningBanner) warningBanner.style.display = 'block';
+        }
+    }
+
+    // --- 5. ENVÍO DE FORMULARIO (CLIENTES) ---
+    async function sendForm(e) { 
+      e.preventDefault(); 
+      const f = new FormData(e.target); 
+      const nuevoLead = {
+        _id: new Date().toISOString(),
+        type: 'client',
+        name: f.get('name'),
+        email: f.get('email'),
+        phone: "Web Form",
+        notes: `Servicio: ${f.get('servicio')}\nMensaje: ${f.get('message')}`,
+        createdAt: new Date().getTime()
+      };
+
+      try {
+          if(db) {
+            await db.put(nuevoLead);
+            alert("✅ ¡Datos guardados! Te contactaremos pronto.");
+            e.target.reset(); 
+          }
+      } catch (err) {
+          console.error(err);
+          alert("Error al guardar en la base de datos.");
+      }
+    }
+
+    // --- 6. UI: MENÚ Y MODAL ---
+    function toggleMenu() { 
+        const nav = document.getElementById('navLinks');
+        if(nav) nav.classList.toggle('active'); 
+    }
+    
+    function openModal(id) { 
+      const modal = document.getElementById('modal'); 
+      const content = document.getElementById('modalContent'); 
+      const title = document.getElementById('modalTitle');
+      if(!modal) return;
+
+      const items = { 
+        1:{title:'SOCIAL GROWTH', desc:'Estrategia viral y crecimiento orgánico.', img:'img/red social.png'}, 
+        2:{title:'ECOMMERCE PWA', desc:'Tienda online ultrarrápida e instalable.', img:'img/web.jpg'}, 
+        3:{title:'REBRANDING', desc:'Nueva identidad corporativa completa.', img:'img/bran.png'},
+        4:{title:'3D EXPERIENCE', desc:'Visualización de productos interactiva.', img:'img/3d.jpg'}
+      };
+      const it = items[id] || items[1];
+      if(title) title.textContent = it.title;
+      if(content) content.innerHTML = `<img src='${it.img}' style='width:100%; border-radius:8px; margin-bottom:15px;'><p>${it.desc}</p>`; 
+      modal.style.display = 'flex'; 
+    }
+    function closeModal() { 
+        const modal = document.getElementById('modal');
+        if(modal) modal.style.display = 'none'; 
+    }
+
+    // Animación Scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-on-scroll').forEach(el => observer.observe(el));
+
+    // --- 7. INICIALIZACIÓN ---
+    // Registro del Service Worker
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js").catch(e => console.log(e));
+    }
+
+    // Iniciar monitoreo
+    window.addEventListener('load', checkServerHealth);
+    setInterval(checkServerHealth, 3000); 
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "Alpha Pixel Admin",
+  "short_name": "AP Admin",
+  "start_url": "/alpF/admin/index2.html",
+  "scope": "/alpF/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#ff0000",
+  "description": "Panel administrativo de Alpha Pixel",
+  "icons": [
+    {
+      "src": "/alpF/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/alpF/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

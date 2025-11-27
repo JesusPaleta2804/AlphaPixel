@@ -1,0 +1,65 @@
+/* Alpha Pixel Admin - Dark theme */
+:root{
+  --bg:#0e0e10;
+  --card:#121214;
+  --muted:#9aa0a6;
+  --accent:#e53935; /* red */
+  --white:#ffffff;
+  --gray:#bfc5ca;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Poppins', sans-serif;background:var(--bg);color:var(--white);display:flex;min-height:100vh}
+.sidebar{width:260px;background:linear-gradient(180deg,#0b0b0c 0%, #121214 100%);padding:20px;display:flex;flex-direction:column;gap:18px;border-right:1px solid rgba(255,255,255,0.04)}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#8b0000);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:var(--white);box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+.brand h1{margin:0;font-size:18px}
+.brand small{color:var(--muted)}
+nav{display:flex;flex-direction:column;gap:8px}
+.nav-btn{background:transparent;border:none;color:var(--gray);text-align:left;padding:10px;border-radius:8px;cursor:pointer}
+.nav-btn:hover{background:rgba(255,255,255,0.02);color:var(--white)}
+.nav-btn.active{background:rgba(229,57,53,0.1);color:var(--white);border-left:3px solid var(--accent);padding-left:8px}
+.sidebar-footer{margin-top:auto;color:var(--muted);font-size:13px}
+
+.main{flex:1;display:flex;flex-direction:column;min-height:100vh}
+.main-header{display:flex;justify-content:space-between;align-items:center;padding:20px 28px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.header-actions{display:flex;gap:8px}
+.header-actions button{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:8px;color:var(--white);cursor:pointer}
+.section{display:none;padding:20px 28px}
+.section.active{display:block}
+.cards{display:flex;gap:16px;margin-bottom:18px}
+.card{flex:1;background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.4);text-align:left}
+.card h3{margin:0;font-size:22px}
+.welcome{background:linear-gradient(90deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:18px;border-radius:12px}
+
+.section-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:16px}
+.panel{background:var(--card);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.panel.full{grid-column:1/-1}
+.panel-header{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:space-between}
+.panel-body{padding:14px 16px}
+label{display:block;font-size:13px;margin-bottom:8px;color:var(--gray)}
+input[type=text],input[type=email],input[type=tel],textarea,select,input[type=search]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--white);outline:none}
+textarea{min-height:80px;resize:vertical}
+.form-actions{display:flex;gap:8px;margin-top:8px}
+button{background:var(--accent);border:none;color:var(--white);padding:10px 12px;border-radius:8px;cursor:pointer}
+button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.04)}
+#clients-table{width:100%;border-collapse:collapse}
+#clients-table th,#clients-table td{padding:10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px;color:var(--gray)}
+#clients-table tbody tr:hover td{background:rgba(255,255,255,0.01)}
+.client-actions button{margin-right:6px;padding:6px 8px;font-size:13px}
+
+.task-controls{margin-bottom:12px;display:flex;gap:8px;align-items:center}
+.task-form input, .task-form select{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--white)}
+.kanban{display:flex;gap:12px}
+.column{flex:1;background:rgba(255,255,255,0.02);border-radius:10px;padding:10px;min-height:220px;display:flex;flex-direction:column}
+.column h4{margin:0 0 8px 0}
+.column-body{flex:1;display:flex;flex-direction:column;gap:8px}
+.task{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center}
+.task small{display:block;color:var(--muted)}
+.task .task-actions button{margin-left:6px;padding:6px 8px;border-radius:6px;font-size:13px}
+
+.muted{color:var(--muted);font-size:13px}
+.main-footer{padding:12px 20px;border-top:1px solid rgba(255,255,255,0.03);color:var(--muted);font-size:13px}
+@media(max-width:900px){
+  .section-grid{grid-template-columns:1fr}
+  .sidebar{display:none}
+}

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modo Offline - Alpha Pixel</title>
+    <link rel="icon" href="img/favicon.ico">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --card-bg: #111;
+            --accent: #ff003c;
+            --warning: #ffcc00; /* Amarillo para "Limitado" */
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --border: rgba(255, 255, 255, 0.1);
+            --font-tech: 'Orbitron', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-dark);
+            /* Patrón de rejilla sutil tech */
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .status-card {
+            background: rgba(15, 15, 20, 0.95);
+            border: 1px solid var(--warning); /* Borde amarillo de advertencia */
+            padding: 40px;
+            border-radius: 12px;
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255, 204, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Tira de advertencia arriba */
+        .status-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--warning);
+            box-shadow: 0 0 10px var(--warning);
+        }
+
+        /* Icono animado */
+        .icon-container {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--warning);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        h1 {
+            font-family: var(--font-tech);
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: white;
+            text-transform: uppercase;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        /* Lista de funciones */
+        .status-list {
+            text-align: left;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 30px;
+            font-size: 0.85rem;
+        }
+        .status-item {
+            display: flex; justify-content: space-between; margin-bottom: 8px;
+        }
+        .status-item:last-child { margin-bottom: 0; }
+        .status-label { color: #ccc; }
+        .status-value { font-family: var(--font-tech); font-weight: bold; }
+        
+        .val-ok { color: #00ff88; }
+        .val-warn { color: var(--warning); }
+        .val-err { color: var(--accent); }
+
+        /* Botones */
+        .btn-retry {
+            background: transparent;
+            border: 1px solid var(--warning);
+            color: var(--warning);
+            padding: 12px 24px;
+            font-family: var(--font-tech);
+            font-size: 0.85rem;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.3s;
+        }
+        .btn-retry:hover {
+            background: var(--warning);
+            color: black;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
+        }
+
+        .offline-footer {
+            margin-top: 20px;
+            font-size: 0.75rem;
+            color: #555;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="status-card">
+        <div class="icon-container">⚠️</div>
+        
+        <h1>Conexión Limitada</h1>
+        <p>
+            No detectamos acceso a internet. La aplicación sigue activa en <strong>Modo Seguro</strong> para proteger tu experiencia.
+        </p>
+
+        <div class="status-list">
+            <div class="status-item">
+                <span class="status-label">Interfaz Principal</span>
+                <span class="status-value val-ok">ACTIVA</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Datos Locales (Admin)</span>
+                <span class="status-value val-ok">DISPONIBLE</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Envío de Formularios</span>
+                <span class="status-value val-warn">PAUSADO</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Carga de Imágenes</span>
+                <span class="status-value val-warn">CACHÉ ONLY</span>
+            </div>
+        </div>
+
+        <button onclick="window.location.reload()" class="btn-retry">
+            RECONECTAR SERVIDOR
+        </button>
+
+        <div class="offline-footer">
+            ALPHA PIXEL PWA v2.0 • LOCAL STORAGE ACTIVE
+        </div>
+    </div>
+
+    <script>
+        // Auto-recarga si vuelve el internet
+        window.addEventListener('online', () => {
+            window.location.reload();
+        });
+    </script>
+
+</body>
+</html>

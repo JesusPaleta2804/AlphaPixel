@@ -1,0 +1,26 @@
+{
+    "6926abbdb6656": {
+        "suscripcion": {
+            "endpoint": "https:\/\/fcm.googleapis.com\/fcm\/send\/dwNQ8cHlOlM:APA91bHZ126QwOE_OOLa-ZfWtYo5K5aepJs33Ap75aoV05VuBzVwzoadxyov_MlIjBe71nFGtWCXFNTpiQmkaVTPf-5OYYA3W8yD7ZolrrbZMvXxCQZkKhtgSRGEfVyXQwmbR5UfuNYa",
+            "expirationTime": null,
+            "keys": {
+                "p256dh": "BAmtbvK95k0nw4Vj_YR0hRH6kbu5PTqPoU0Ig7ENmNpzaQCjas-q4wCwsvYGT6DfxQPleNGYERAkNzLb7ZtYFnY",
+                "auth": "nQ_VnBA73xNXyZrrdc7APQ"
+            }
+        },
+        "categoria": "general",
+        "fecha": "2025-11-26 08:26:53"
+    },
+    "6926acc568d6a": {
+        "suscripcion": {
+            "endpoint": "https:\/\/fcm.googleapis.com\/fcm\/send\/cG3rYSZfdWE:APA91bEcviEByZWEhfmEmHvRss87Aiwn6UTI7dUN8rcHWK2KdZF_bcDddF9JqTSofsAZnUFdBmwWJf-KqhR_sPPYJNk6WUQ975Y8gdH9-i8Aiw7V9BM_gNybtmBGHdHkFFhKXdDrW1Mt",
+            "expirationTime": null,
+            "keys": {
+                "p256dh": "BC4mCFLWRZhwKJK44ePMDP6UnaIpirBcro8Lvg5j5O1C1oEeSlOP-PKm0vTfnZlfWCSZGKkfrwEviinrEVm85q8",
+                "auth": "kyrYR9QPMNHQdFpv3yfcew"
+            }
+        },
+        "categoria": "general",
+        "fecha": "2025-11-26 08:31:17"
+    }
+}
